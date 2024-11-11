@@ -20,6 +20,9 @@ public class OracleApplication {
 
             selectAllEmployees(connection);
             selectAllCountriesAsXml(connection);
+            // Ejecutar las consultas
+            getEmployeeWithDepartment(connection);
+            getAllManagersAsXML(connection);
 
         } catch (Exception e) {
             log.error("Error al tratar con la base de datos", e);
@@ -70,4 +73,71 @@ public class OracleApplication {
             log.debug("Country as XML: {}", countries.getString("CountryXml"));
         }
     }
+    private static void getEmployeeWithDepartment(Connection connection) throws SQLException {
+        Statement selectEmployees = connection.createStatement();
+        ResultSet employees = selectEmployees.executeQuery("select * from EMPLOYEES");
+        String query = """
+            SELECT XMLELEMENT(
+                       "empleados",
+                       XMLATTRIBUTES(
+                           e.first_name AS "nombre",
+                           e.last_name AS "apellidos",
+                           d.department_name AS "departamento"
+                       )
+                    ) AS empleado_xml
+            FROM employees e
+            JOIN departments d ON e.department_id = d.department_id
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                // Obtener el XML como un objeto SQLXML
+                SQLXML xmlData = resultSet.getSQLXML("empleado_xml");
+                String xmlString = xmlData.getString();
+                System.out.println("Empleado XML: " + xmlString);
+            }
+        }
+    }
+    private static void getAllManagersAsXML(Connection connection) throws SQLException {
+        String query = """
+            SELECT XMLELEMENT(
+                       "managers",
+                       XMLAGG(
+                           XMLELEMENT(
+                               "manager",
+                               XMLELEMENT(
+                                   "nombreCompleto",
+                                   XMLFOREST(
+                                       e.first_name AS "nombre",
+                                       e.last_name AS "apellido"
+                                   )
+                               ),
+                               XMLFOREST(
+                                   d.department_name AS "department",
+                                   l.city AS "city",
+                                   c.country_name AS "country"
+                               )
+                           )
+                       )
+                   ) AS managers_xml
+            FROM employees e
+            JOIN departments d ON e.department_id = d.department_id
+            JOIN locations l ON d.location_id = l.location_id
+            JOIN countries c ON l.country_id = c.country_id
+            WHERE e.employee_id IN (SELECT manager_id FROM employees)
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            if (resultSet.next()) {
+                SQLXML xmlData = resultSet.getSQLXML("managers_xml");
+                String xmlString = xmlData.getString();
+                System.out.println("Managers XML: " + xmlString);
+            }
+        }
+    }
+
 }

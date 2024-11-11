@@ -20,6 +20,10 @@ public class MySqlApplication {
 
             selectAllEmployeesOfDepartment(connection, "d001");
             selectAllEmployeesOfDepartment(connection, "d002");
+            highestPaidInDepartment(connection, "d001");
+            secondHighestPaidInDepartment(connection, "d001");
+            countEmployeesHiredInMonth(connection, 2020, 12); // Ejemplo para mayo de 2023
+            listHiringMonths(connection);
 
         } catch (Exception e) {
             log.error("Error al tratar con la base de datos", e);
@@ -68,4 +72,82 @@ public class MySqlApplication {
                     employees.getString("Total"));
         }
     }
+    private static void countByGender(Connection connection) throws SQLException {
+        String query = "SELECT gender, COUNT(*) AS cantidad FROM employees GROUP BY gender ORDER BY cantidad DESC";
+        try (PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                String gender = resultSet.getString("gender");
+                int count = resultSet.getInt("cantidad");
+                log.info("Género: {}, Cantidad: {}", gender, count);
+            }
+        }
+    }
+    private static void highestPaidInDepartment(Connection connection, String department) throws SQLException {
+        String query = "SELECT e.first_name, e.last_name, s.salary " +
+                "FROM employees e " +
+                "JOIN dept_emp de ON e.emp_no = de.emp_no " +
+                "JOIN salaries s ON e.emp_no = s.emp_no " +
+                "WHERE de.dept_no = ? AND s.to_date = '9999-01-01' " +
+                "ORDER BY s.salary DESC LIMIT 1";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, department);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                String firstName = resultSet.getString("first_name");
+                String lastName = resultSet.getString("last_name");
+                int salary = resultSet.getInt("salary");
+                log.info("Empleado mejor pagado en departamento {}: {} {}, Salario: {}", department, firstName, lastName, salary);
+            }
+        }
+    }
+    private static void secondHighestPaidInDepartment(Connection connection, String department) throws SQLException {
+        String query = "SELECT e.first_name, e.last_name, s.salary " +
+                "FROM employees e " +
+                "JOIN dept_emp de ON e.emp_no = de.emp_no " +
+                "JOIN salaries s ON e.emp_no = s.emp_no " +
+                "WHERE de.dept_no = ? AND s.to_date = '9999-01-01' " +
+                "ORDER BY s.salary DESC LIMIT 1 OFFSET 1";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, department);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                String firstName = resultSet.getString("first_name");
+                String lastName = resultSet.getString("last_name");
+                int salary = resultSet.getInt("salary");
+                log.info("Segundo empleado mejor pagado en departamento {}: {} {}, Salario: {}", department, firstName, lastName, salary);
+            }
+        }
+    }
+    private static void countEmployeesHiredInMonth(Connection connection, int year, int month) throws SQLException {
+        String query = "SELECT COUNT(*) AS total FROM employees WHERE YEAR(hire_date) = ? AND MONTH(hire_date) = ?";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, year);
+            statement.setInt(2, month);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                int total = resultSet.getInt("total");
+                log.info("Empleados contratados en {}/{}: {}", month, year, total);
+            }
+        }
+    }
+    private static void listHiringMonths(Connection connection) throws SQLException {
+        String query = "SELECT YEAR(hire_date) AS anio, MONTH(hire_date) AS mes, COUNT(*) AS num_contrataciones " +
+                "FROM employees GROUP BY anio, mes ORDER BY anio, mes";
+        try (PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                int year = resultSet.getInt("anio");
+                int month = resultSet.getInt("mes");
+                int count = resultSet.getInt("num_contrataciones");
+                log.info("Año: {}, Mes: {}, Contrataciones: {}", year, month, count);
+            }
+        }
+    }
+
 }
