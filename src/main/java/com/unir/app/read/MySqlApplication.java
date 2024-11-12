@@ -20,9 +20,10 @@ public class MySqlApplication {
 
             selectAllEmployeesOfDepartment(connection, "d001");
             selectAllEmployeesOfDepartment(connection, "d002");
+            countByGender(connection);
             highestPaidInDepartment(connection, "d001");
             secondHighestPaidInDepartment(connection, "d001");
-            countEmployeesHiredInMonth(connection, 2020, 12); // Ejemplo para mayo de 2023
+            countEmployeesHiredInMonth(connection, 2020, 1); // Ejemplo para mayo de 2023
             listHiringMonths(connection);
 
         } catch (Exception e) {

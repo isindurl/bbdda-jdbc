@@ -20,7 +20,6 @@ public class OracleApplication {
 
             selectAllEmployees(connection);
             selectAllCountriesAsXml(connection);
-            // Ejecutar las consultas
             getEmployeeWithDepartment(connection);
             getAllManagersAsXML(connection);
 
