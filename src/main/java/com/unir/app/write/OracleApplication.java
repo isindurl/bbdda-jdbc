@@ -26,6 +26,12 @@ public class OracleApplication {
             log.info("Conexión establecida con la base de datos Oracle");
             OracleCountry spain = new OracleCountry("ES", 1, "Spain");
             upsert(connection, spain);
+            int departmentId = 300; // ID del nuevo departamento
+            String departmentName = "New Department"; // Nombre del nuevo departamento
+            int managerId = 101; // ID de un gerente existente
+            int locationId = 1700; // ID de una ubicación existente
+
+            insertDepartment(connection, departmentId, departmentName, managerId, locationId);
 
         } catch (Exception e) {
             log.error("Error al tratar con la base de datos", e);
@@ -74,4 +80,25 @@ public class OracleApplication {
             log.debug("Filas Insertadas: {}", filasInsertadas);
         }
     }
+    public static void insertDepartment(Connection connection, int departmentId, String departmentName, int managerId, int locationId) throws SQLException {
+        String insertSql = "INSERT INTO departments (department_id, department_name, manager_id, location_id) VALUES (?, ?, ?, ?)";
+
+        try (PreparedStatement statement = connection.prepareStatement(insertSql)) {
+            statement.setInt(1, departmentId);
+            statement.setString(2, departmentName);
+            statement.setInt(3, managerId);
+            statement.setInt(4, locationId);
+
+            int rowsInserted = statement.executeUpdate();
+            if (rowsInserted > 0) {
+                System.out.println("El departamento ha sido insertado exitosamente.");
+            } else {
+                System.out.println("No se insertó el departamento.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al insertar el departamento: " + e.getMessage());
+            throw e;
+        }
+    }
+
 }
